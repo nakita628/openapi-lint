@@ -1,0 +1,17 @@
+{
+  "name": "openapi-lint",
+  "private": true,
+  "scripts": {
+    "lint:spectral": "spectral lint examples/valid.yaml -r examples/spectral.yaml",
+    "lint:redocly": "redocly lint examples/valid.yaml --config examples/redocly.yaml",
+    "lint:vacuum": "vacuum lint -d -r examples/vacuum.yaml examples/valid.yaml",
+    "lint": "pnpm lint:spectral && pnpm lint:redocly && pnpm lint:vacuum",
+    "lint:invalid": "spectral lint examples/invalid.yaml -r examples/spectral.yaml; redocly lint examples/invalid.yaml --config examples/redocly.yaml; vacuum lint -d -r examples/vacuum.yaml examples/invalid.yaml; true"
+  },
+  "devDependencies": {
+    "@quobix/vacuum": "0.40.0",
+    "@redocly/cli": "2.77.0",
+    "@stoplight/spectral-cli": "6.17.1"
+  },
+  "packageManager": "pnpm@11.7.0"
+}

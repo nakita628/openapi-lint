@@ -1,0 +1,60 @@
+openapi: 3.1.0
+info:
+  title: Banking API
+  version: 1.0.0
+servers:
+  - url: http://api.example.com
+paths:
+  /send-email:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                msg: { type: number }
+      responses:
+        '200':
+          description: OK
+  /accounts/{accountId}:
+    get:
+      operationId: getAccount
+      tags: [Account]
+      summary: Get account
+      parameters:
+        - name: account_id
+          in: query
+          schema: { type: object }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/aDTO' }
+    delete:
+      operationId: getAccount
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '204': { description: deleted }
+components:
+  securitySchemes:
+    oauth:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.example.com/token
+          scopes:
+            read: ''
+  schemas:
+    aDTO:
+      type: object
+      properties:
+        ts: { type: integer }
+        err_msg: { type: string }
+    Unused:
+      type: object

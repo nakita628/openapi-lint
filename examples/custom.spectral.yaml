@@ -1,0 +1,26 @@
+rules:
+  schema-all-optional:
+    description: プロパティを持つ object に required が無い（全部任意）
+    severity: warn
+    given: "$..[?(@.type == 'object' && @.properties)]"
+    then: { field: required, function: truthy }
+  query-param-no-object:
+    description: クエリパラメータに object を使わない
+    severity: error
+    given: "$.paths[*][*].parameters[?(@.in == 'query')].schema"
+    then: { field: type, function: pattern, functionOptions: { notMatch: "^object$" } }
+  oauth-scope-description:
+    description: スコープの説明が空
+    severity: warn
+    given: "$.components.securitySchemes[*].flows[*].scopes[*]"
+    then: { function: truthy }
+  path-no-verb:
+    description: パスに動詞を含めない（リソース指向ガイドライン）
+    severity: warn
+    given: "$.paths[*]~"   # パスのキー（Spectral / vacuum 両対応の書き方）
+    then: { function: pattern, functionOptions: { notMatch: "/(get|send|create|update|delete)[-_a-z]*" } }
+  property-camel-case:
+    description: プロパティ名は camelCase
+    severity: warn
+    given: "$..properties"
+    then: { field: "@key", function: casing, functionOptions: { type: camel } }

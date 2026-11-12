@@ -1,0 +1,4 @@
+extends:
+  - [vacuum:oas, recommended]
+  - [vacuum:owasp, all]
+  - ./custom.spectral.yaml

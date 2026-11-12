@@ -1,0 +1,27 @@
+extends: [recommended]
+rules:
+  rule/path-no-verb:
+    subject: { type: Paths }
+    assertions: { notPattern: '/(get|send|create|update|delete)' }
+    message: パスに動詞を含めない
+    severity: warn
+  rule/query-no-object:
+    subject: { type: Schema, property: type }
+    where:
+      - subject: { type: Parameter, property: in }
+        assertions: { const: query }
+    assertions: { notPattern: '^object$' }
+    message: クエリパラメータに object を使わない
+  rule/prop-camel:
+    subject: { type: SchemaProperties }
+    assertions: { casing: camelCase }
+    message: プロパティ名は camelCase
+    severity: warn
+  rule/all-optional:
+    subject: { type: Schema }
+    where:
+      - subject: { type: Schema, property: type }
+        assertions: { const: object }
+    assertions: { required: [required] }
+    message: 全プロパティが任意になっている
+    severity: warn

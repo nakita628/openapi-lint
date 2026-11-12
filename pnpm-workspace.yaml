@@ -1,0 +1,5 @@
+allowBuilds:
+  '@quobix/vacuum': true   # postinstall で vacuum のバイナリを取得するため必須
+  '@scarf/scarf': false    # 利用統計の送信（不要）
+minimumReleaseAgeExclude:
+  - '@quobix/vacuum@0.40.0'

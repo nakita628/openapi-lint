@@ -1,0 +1,276 @@
+openapi: 3.1.0
+info:
+  title: Banking API
+  version: 1.0.0
+  description: 口座情報を参照・管理する API。
+  contact:
+    name: API Team
+    url: https://api.bank.test/support
+    email: api-team@bank.test
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://api.bank.test
+    description: 本番環境
+tags:
+  - name: Account
+    description: 口座
+security:
+  - oauth:
+      - accounts:read
+paths:
+  /accounts:
+    get:
+      operationId: listAccounts
+      tags: [Account]
+      summary: 口座一覧を取得する
+      description: ログイン中のユーザーが保有する口座の一覧を返す。
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 口座一覧
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountList'
+              example:
+                items:
+                  - accountId: '0123456789'
+                    accountName: 普通預金
+                    createdAt: '2026-11-12T09:00:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /accounts/{accountId}:
+    parameters:
+      - $ref: '#/components/parameters/AccountId'
+    get:
+      operationId: getAccount
+      tags: [Account]
+      summary: 口座を取得する
+      description: 指定した口座の情報を返す。
+      responses:
+        '200':
+          description: 口座情報
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+              example:
+                accountId: '0123456789'
+                accountName: 普通預金
+                createdAt: '2026-11-12T09:00:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      operationId: deleteAccount
+      tags: [Account]
+      summary: 口座を解約する
+      description: 指定した口座を解約する。
+      security:
+        - oauth:
+            - accounts:write
+      responses:
+        '204':
+          description: 解約済み
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/X-RateLimit-Limit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  securitySchemes:
+    oauth:
+      type: oauth2
+      description: OAuth 2.0 認可コードフロー
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.bank.test/authorize
+          tokenUrl: https://auth.bank.test/token
+          scopes:
+            accounts:read: 口座情報の参照
+            accounts:write: 口座の変更・解約
+  parameters:
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      description: 口座番号
+      schema:
+        type: string
+        pattern: '^[0-9]{10}$'
+        maxLength: 10
+      example: '0123456789'
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: 取得件数の上限
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+  headers:
+    X-RateLimit-Limit:
+      description: 単位時間あたりのリクエスト上限
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 100000
+      example: 1000
+  schemas:
+    Account:
+      type: object
+      description: 口座を表すモデル
+      additionalProperties: false
+      required: [accountId, accountName, createdAt]
+      properties:
+        accountId:
+          type: string
+          description: 10 桁の口座番号
+          pattern: '^[0-9]{10}$'
+          maxLength: 10
+          examples: ['0123456789']
+        accountName:
+          type: string
+          description: 口座の表示名
+          pattern: '^.+$'
+          maxLength: 100
+          examples: [普通預金]
+        createdAt:
+          type: string
+          description: 開設日時（ISO 8601）
+          format: date-time
+          maxLength: 32
+          examples: ['2026-11-12T09:00:00Z']
+        branchName:
+          type: string
+          description: 取扱支店名（v2 で追加・任意）
+          pattern: '^.+$'
+          maxLength: 100
+          examples: [本店]
+    AccountList:
+      type: object
+      description: 口座の一覧を表すモデル
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: 口座の配列
+          maxItems: 100
+          examples:
+            - - accountId: '0123456789'
+                accountName: 普通預金
+                createdAt: '2026-11-12T09:00:00Z'
+          items:
+            $ref: '#/components/schemas/Account'
+    Problem:
+      type: object
+      description: エラー（RFC 9457 Problem Details）
+      additionalProperties: false
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          description: エラー種別を表す URI
+          format: uri
+          maxLength: 2048
+          examples: ['https://api.bank.test/problems/not-found']
+        title:
+          type: string
+          description: エラーの概要
+          pattern: '^.+$'
+          maxLength: 200
+          examples: [Not Found]
+        status:
+          type: integer
+          description: HTTP ステータスコード
+          format: int32
+          minimum: 400
+          maximum: 599
+          examples: [404]
+  responses:
+    BadRequest:
+      description: リクエストが不正
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/X-RateLimit-Limit'
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { type: 'https://api.bank.test/problems/bad-request', title: Bad Request, status: 400 }
+    Unauthorized:
+      description: 認証されていない
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/X-RateLimit-Limit'
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { type: 'https://api.bank.test/problems/unauthorized', title: Unauthorized, status: 401 }
+    NotFound:
+      description: 口座が存在しない
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/X-RateLimit-Limit'
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { type: 'https://api.bank.test/problems/not-found', title: Not Found, status: 404 }
+    TooManyRequests:
+      description: リクエスト過多
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/X-RateLimit-Limit'
+        Retry-After:
+          description: 再試行までの秒数
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 86400
+          example: 60
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { type: 'https://api.bank.test/problems/too-many-requests', title: Too Many Requests, status: 429 }
+    InternalServerError:
+      description: サーバー内部エラー
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example: { type: 'https://api.bank.test/problems/internal', title: Internal Server Error, status: 500 }
